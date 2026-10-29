@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: REST API Bank - Countries
+  description: |
+    Importa países desde la API pública del Banco Mundial, los almacena y los expone para
+    consumo interno. Todas las operaciones requieren `Authorization: Bearer <token>`.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+tags:
+  - name: Countries
+paths:
+  /api/countries/import:
+    post:
+      tags: [Countries]
+      operationId: importCountry
+      summary: Importa (crea o actualiza) un país desde el Banco Mundial
+      description: |
+        - País nuevo → consulta al Banco Mundial, lo almacena y responde 201.
+        - País existente → consulta al Banco Mundial, lo actualiza y responde 200. Si el Banco
+          Mundial falla, responde 200 con los datos previos almacenados.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Código ISO alpha-2 o alpha-3 (2 o 3 letras, sin distinguir mayúsculas).
+          schema:
+            type: string
+            pattern: '^\s*[A-Za-z]{2,3}\s*$'
+          example: CO
+      responses:
+        '201':
+          description: País creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+        '200':
+          description: País existente actualizado (o datos previos si el Banco Mundial falló).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+  /api/countries:
+    get:
+      tags: [Countries]
+      operationId: getCountries
+      summary: Lista todos los países almacenados
+      responses:
+        '200':
+          description: Arreglo de países (vacío si no hay registros).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/countries/{id}:
+    get:
+      tags: [Countries]
+      operationId: getCountryById
+      summary: Obtiene un país almacenado por su identificador
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador numérico del país (campo `id` de las respuestas).
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: País encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Country:
+      type: object
+      required: [id, alpha2Code]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador asignado por el sistema al almacenar el país.
+          example: 1
+        alpha2Code:
+          type: string
+          example: CO
+        alpha3Code:
+          type: string
+          nullable: true
+          example: COL
+        name:
+          type: string
+          nullable: true
+          example: Colombia
+        capital:
+          type: string
+          nullable: true
+          example: Bogota
+        region:
+          type: string
+          nullable: true
+          example: Latin America & Caribbean
+        incomeLevel:
+          type: string
+          nullable: true
+          example: Upper middle income
+        latitude:
+          type: number
+          nullable: true
+          example: 4.60987
+        longitude:
+          type: number
+          nullable: true
+          example: -74.082
+    ErrorResponse:
+      type: object
+      required: [status, error, message, timestamp, path]
+      properties:
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: No se encontró el país con id '999'.
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          example: /api/countries/999
+  responses:
+    BadRequest:
+      description: Parámetros inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Token Bearer ausente o inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Error interno inesperado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadGateway:
+      description: Falla al consumir la API del Banco Mundial (país no almacenado previamente).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

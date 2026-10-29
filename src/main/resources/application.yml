@@ -1,0 +1,29 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: rest-api-bank
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB:countries}
+    username: ${POSTGRES_USER:countries}
+    password: ${POSTGRES_PASSWORD:countries}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: always
+
+app:
+  security:
+    bearer-token: ${API_BEARER_TOKEN:}
+  world-bank:
+    base-url: ${WORLD_BANK_BASE_URL:https://api.worldbank.org/v2}
+    timeout-seconds: ${WORLD_BANK_TIMEOUT_SECONDS:10}
+
+# Swagger UI muestra el contrato API First (static/openapi.yaml), no un spec inferido del código.
+springdoc:
+  swagger-ui:
+    url: /openapi.yaml

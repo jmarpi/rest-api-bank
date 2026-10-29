@@ -41,7 +41,9 @@
 ## R4. Swagger UI
 
 - **Decision**: `springdoc-openapi-starter-webmvc-ui` (línea 3.x, compatible con Boot 4) solo
-  como visor: `springdoc.api-docs.enabled=false` y `springdoc.swagger-ui.url=/openapi.yaml`.
+  como visor: `springdoc.swagger-ui.url=/openapi.yaml`. (Implementación: `api-docs.enabled=false`
+  también desactiva el Swagger UI en springdoc, por lo que se deja habilitado; el UI muestra el
+  contrato estático.)
 - **Rationale**: FR-023 exige Swagger. Se sirve el mismo contrato que genera el código, así que
   la documentación nunca diverge de la implementación.
 - **Alternatives considered**: webjar `swagger-ui` + página HTML propia (más archivos manuales);
@@ -49,7 +51,8 @@
 
 ## R5. Cliente del Banco Mundial
 
-- **Decision**: `RestClient` (incluido en Spring Web) con `JdkClientHttpRequestFactory`,
+- **Decision**: `RestClient` (incluido en Spring Web, creado con `RestClient.builder()` porque en
+  Boot 4 el `RestClient.Builder` autoconfigurado está en otro módulo) con `JdkClientHttpRequestFactory`,
   timeout de conexión y lectura = `WORLD_BANK_TIMEOUT_SECONDS` (default 10). La respuesta se lee
   como árbol JSON (`JsonNode`) porque es un arreglo heterogéneo: `[ {paginación}, [países] ]` o
   `[ { "message": [...] } ]`.

@@ -6,7 +6,7 @@
 
 ### `CountryCode` (value object)
 
-Código recibido en la importación o en la consulta por id.
+Código recibido en la importación (`POST /api/countries/import?code=`).
 
 | Regla | Detalle |
 |-------|---------|
@@ -14,12 +14,13 @@ Código recibido en la importación o en la consulta por id.
 | Validación | obligatorio, no vacío, `^[A-Z]{2,3}$` tras normalizar → si no, `InvalidCountryCodeException` |
 | Tipo | `isAlpha2()` (longitud 2) / `isAlpha3()` (longitud 3) |
 
-Para `GET /api/countries/{id}` se exige `isAlpha2()`; un alpha-3 válido → 400 (FR-012).
+`GET /api/countries/{id}` no usa `CountryCode`: `{id}` es el identificador numérico (FR-012).
 
 ### `Country` (entidad de dominio, record inmutable)
 
 | Campo | Tipo | Obligatorio | Origen Banco Mundial |
 |-------|------|-------------|----------------------|
+| `id` | Long | No (`null` hasta almacenarse) | — (asignado por la BD) |
 | `alpha2Code` | String (2, mayúsculas) | Sí — identidad de negocio | `iso2Code` |
 | `alpha3Code` | String (3, mayúsculas) | No | `id` |
 | `name` | String | No | `name` |
@@ -50,7 +51,7 @@ Igualdad e identidad por `alpha2Code`.
 
 | Columna | Tipo | Restricciones |
 |---------|------|---------------|
-| `id` | `BIGSERIAL` | PK (técnica, nunca expuesta) |
+| `id` | `BIGSERIAL` | PK; expuesto como `id` y usado en `GET /api/countries/{id}`; no cambia al actualizar |
 | `alpha2_code` | `VARCHAR(2)` | `NOT NULL`, `UNIQUE` |
 | `alpha3_code` | `VARCHAR(3)` | nullable, índice |
 | `name` | `VARCHAR(255)` | nullable |

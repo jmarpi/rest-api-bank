@@ -75,16 +75,17 @@ paths:
     get:
       tags: [Countries]
       operationId: getCountryById
-      summary: Obtiene un país almacenado por su código ISO alpha-2
+      summary: Obtiene un país almacenado por su identificador
       parameters:
         - name: id
           in: path
           required: true
-          description: Código ISO alpha-2 (2 letras, sin distinguir mayúsculas).
+          description: Identificador numérico del país (campo `id` de las respuestas).
           schema:
-            type: string
-            pattern: '^[A-Za-z]{2}$'
-          example: CO
+            type: integer
+            format: int64
+            minimum: 1
+          example: 1
       responses:
         '200':
           description: País encontrado.
@@ -108,8 +109,13 @@ components:
   schemas:
     Country:
       type: object
-      required: [alpha2Code]
+      required: [id, alpha2Code]
       properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador asignado por el sistema al almacenar el país.
+          example: 1
         alpha2Code:
           type: string
           example: CO
@@ -153,13 +159,13 @@ components:
           example: Not Found
         message:
           type: string
-          example: No se encontró el país con código 'XX'.
+          example: No se encontró el país con id '999'.
         timestamp:
           type: string
           format: date-time
         path:
           type: string
-          example: /api/countries/XX
+          example: /api/countries/999
   responses:
     BadRequest:
       description: Parámetros inválidos.

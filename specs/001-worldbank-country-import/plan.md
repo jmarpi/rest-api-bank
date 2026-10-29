@@ -9,7 +9,7 @@
 Microservicio REST que importa países desde la API pública del Banco Mundial
 (`GET {base}/country/{code}?format=json`), los persiste en PostgreSQL con el alpha-2 como
 identidad de negocio y los expone mediante `POST /api/countries/import`, `GET /api/countries` y
-`GET /api/countries/{id}` (id = alpha-2). Arquitectura hexagonal mínima: dominio puro, dos casos
+`GET /api/countries/{id}` (id numérico asignado por el sistema). Arquitectura hexagonal mínima: dominio puro, dos casos
 de uso, dos puertos de salida (proveedor externo y repositorio). Contrato OpenAPI primero con
 interfaces/DTOs generados en `target/`. Resiliencia: las consultas solo leen la BD y la
 reimportación de un país existente devuelve los datos previos si el Banco Mundial falla.
@@ -60,7 +60,10 @@ endpoints; 1 tabla
 
 **Resultado pre-diseño**: PASS. **Resultado post-diseño** (tras data-model y contrato): PASS.
 
-### ⚠️ Hallazgo para la spec (Principio VII)
+### ✅ Hallazgo para la spec (Principio VII) — resuelto por la enmienda del 2026-10-29
+
+`{id}` pasó a ser el identificador numérico, por lo que las agregaciones con alpha-2
+alfanumérico ya pueden consultarse. Texto original:
 
 Algunas agregaciones del Banco Mundial tienen un `iso2Code` con dígitos (p. ej. `WLD` → `1W`,
 `EAS` → `Z4`). La spec permite guardarlas (clarificación 2026-10-29), pero FR-012 exige que

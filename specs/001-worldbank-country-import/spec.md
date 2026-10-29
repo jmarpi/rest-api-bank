@@ -18,8 +18,8 @@ con validaciones, manejo de errores por código HTTP, despliegue con Docker Comp
 - Q: Si el país ya existe, ¿se consulta al Banco Mundial? → A: Sí, siempre se consulta de nuevo
   y se actualizan los datos (200). Si la consulta falla y el país ya existía, se responde con la
   información previa almacenada (200) en lugar de error.
-- Q: ¿Qué es `{id}` en `GET /api/countries/{id}`? → A: El código ISO alpha-2 del país
-  (p. ej. `/api/countries/CO`). No se expone un identificador interno.
+- Q: ¿Qué es `{id}` en `GET /api/countries/{id}`? → A: ~~El código ISO alpha-2 del país~~
+  (reemplazada, ver Session 2026-10-29 (enmienda)).
 - Q: ¿Cómo distingue el consumidor una respuesta con datos previos (fallback) de una
   actualizada? → A: No se distingue; responde 200 con los datos previos y la falla solo queda
   en logs.
@@ -27,6 +27,12 @@ con validaciones, manejo de errores por código HTTP, despliegue con Docker Comp
   se guardan como cualquier país, con los campos faltantes vacíos.
 - Q: ¿Tiempo máximo de espera al Banco Mundial? → A: 10 segundos por defecto, configurable en
   `.env.dev`.
+
+### Session 2026-10-29 (enmienda)
+
+- Q: ¿Qué es `{id}` en `GET /api/countries/{id}`? → A: El identificador numérico que el sistema
+  asigna al almacenar el país. Se incluye como `id` en todas las respuestas de país. El alpha-2
+  sigue siendo el identificador único de negocio (FR-008).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -90,23 +96,24 @@ Mundial.
 
 ---
 
-### User Story 3 - Consultar un país por código alpha-2 (Priority: P3)
+### User Story 3 - Consultar un país por identificador (Priority: P3)
 
-El consumidor obtiene el detalle de un país almacenado a partir de su código ISO alpha-2, que es
-el `{id}` de la ruta.
+El consumidor obtiene el detalle de un país almacenado a partir de su identificador numérico
+(`id`), que recibe en las respuestas de importación y de listado.
 
 **Why this priority**: complementa al listado para consultas puntuales.
 
-**Independent Test**: importar Colombia y consultar `GET /api/countries/CO`.
+**Independent Test**: importar Colombia, tomar el `id` de la respuesta y consultar
+`GET /api/countries/{id}`.
 
 **Acceptance Scenarios**:
 
-1. **Given** Colombia está almacenado, **When** se consulta `GET /api/countries/CO` (o `co`),
+1. **Given** Colombia está almacenado con `id` 1, **When** se consulta `GET /api/countries/1`,
    **Then** se responde `200 OK` con ese país.
-2. **Given** no hay un país almacenado con alpha-2 `{id}`, **When** se consulta, **Then** se
-   responde `404 Not Found` con mensaje amigable (sin consultar al Banco Mundial).
-3. **Given** `{id}` no tiene exactamente 2 caracteres alfabéticos (p. ej. `COL`, `C1`, `123`),
-   **When** se consulta, **Then** se responde `400 Bad Request`.
+2. **Given** no hay un país almacenado con ese `id` (p. ej. `999`), **When** se consulta,
+   **Then** se responde `404 Not Found` con mensaje amigable (sin consultar al Banco Mundial).
+3. **Given** `{id}` no es un entero positivo (p. ej. `CO`, `abc`, `0`, `-1`), **When** se
+   consulta, **Then** se responde `400 Bad Request`.
 
 ---
 
@@ -202,13 +209,14 @@ operaciones.
 
 - **FR-011**: El sistema MUST exponer `GET /api/countries`, que responde `200 OK` con un arreglo
   JSON de todos los países almacenados, o `[]` si no hay registros.
-- **FR-012**: El sistema MUST exponer `GET /api/countries/{id}`, donde `{id}` es el código ISO
-  alpha-2 (exactamente 2 letras, sin distinguir mayúsculas; si no → `400`). Responde `200 OK` con
-  el país o `404 Not Found` si no está almacenado.
+- **FR-012**: El sistema MUST exponer `GET /api/countries/{id}`, donde `{id}` es el identificador
+  numérico asignado por el sistema (entero positivo; si no → `400`). Responde `200 OK` con el país
+  o `404 Not Found` si no está almacenado.
 - **FR-013**: Las operaciones de consulta MUST responder únicamente con datos almacenados y MUST
   funcionar aunque el Banco Mundial no esté disponible.
-- **FR-014**: Cada país devuelto MUST incluir: alpha-2, alpha-3, nombre, capital, región, nivel
-  de ingresos, latitud y longitud (vacíos como `null`). No se expone identificador interno.
+- **FR-014**: Cada país devuelto MUST incluir: `id`, alpha-2, alpha-3, nombre, capital, región,
+  nivel de ingresos, latitud y longitud (vacíos como `null`). El `id` se asigna al crear el país
+  y no cambia en las actualizaciones.
 
 **Seguridad**
 
@@ -248,9 +256,10 @@ operaciones.
 
 ### Key Entities
 
-- **País (Country)**: país importado desde el Banco Mundial. Se identifica por su código ISO
-  alpha-2 (único, obligatorio). Atributos: alpha-3, nombre, capital, región, nivel de ingresos,
-  latitud, longitud.
+- **País (Country)**: país importado desde el Banco Mundial. Tiene un identificador numérico
+  (`id`, asignado por el sistema, usado en `GET /api/countries/{id}`) y un identificador único de
+  negocio, el código ISO alpha-2 (obligatorio, evita duplicados). Atributos: alpha-3, nombre,
+  capital, región, nivel de ingresos, latitud, longitud.
 
 ## Success Criteria *(mandatory)*
 
@@ -259,7 +268,7 @@ operaciones.
 - **SC-001**: Un consumidor puede importar un país válido y obtener sus datos en menos de 5
   segundos en condiciones normales del Banco Mundial.
 - **SC-002**: Importar el mismo país 10 veces (mezclando alpha-2 y alpha-3) deja exactamente 1
-  registro almacenado.
+  registro almacenado, siempre con el mismo `id`.
 - **SC-003**: Con el Banco Mundial inaccesible, el 100 % de las consultas de listado y detalle,
   y el 100 % de las importaciones de países ya almacenados, responden con éxito con los datos
   previos.

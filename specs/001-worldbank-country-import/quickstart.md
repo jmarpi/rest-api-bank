@@ -42,9 +42,9 @@ export API=http://localhost:8080
 | 6 | `POST .../import?code=C1`, `code=COLO`, `code=` y sin `code` | 400 | US1-5, FR-002 |
 | 7 | `POST .../import?code=XX` | 404 | US1-4, FR-009 |
 | 8 | `POST .../import?code=LCN` | 201, alpha-2 `ZJ`, capital/latitud/longitud `null` | US1-3 |
-| 9 | `GET $API/api/countries/co` | 200 Colombia | US3-1 |
-| 10 | `GET $API/api/countries/ZZ` | 404 | US3-2 |
-| 11 | `GET $API/api/countries/COL` | 400 | US3-3 |
+| 9 | `GET $API/api/countries/{id}` con el `id` devuelto en #4 | 200 Colombia | US3-1 |
+| 10 | `GET $API/api/countries/999` | 404 | US3-2 |
+| 11 | `GET $API/api/countries/CO` y `/abc` y `/0` | 400 | US3-3 |
 | 12 | `DELETE $API/api/countries` | 405 + ErrorResponse | FR-019 |
 
 ## 3. Resiliencia (Banco Mundial caído)
